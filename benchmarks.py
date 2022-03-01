@@ -1,11 +1,10 @@
-import statistics
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import timeit as timeit
 
 
-def GetMaxReward(array):
+def GetMaxRewardFirstTry(array):
     result = np.zeros(0)
     sumi = 0
     for i in range(array.size):
@@ -15,35 +14,69 @@ def GetMaxReward(array):
             # start index bigger than end index -> ignore (combination already calculated)
             if i < j:
                 # add new endindex value to sum
-                sumi = sumi + array[j]
+                sumi += array[j]
                 result = np.append(result, [sumi])
-    print(max(result))
+
+    if(result.size != 0):
+        print(f"Grösste Differenz ist: {max(result)}")
 
 
-def Benchmark(arraysize):
+def GetMaxRewardSecondTry(array):
+    result = np.zeros(0)
+    sumi = 0
+    for i in range(array.size):
+        # Verlauf berechnen (Kurs)
+        sumi += array[i]
+        result = np.append(result, sumi)
+        # maximum subtrahiert vom minimum der verlauf kurve ergibt die grösste differenz
+
+    if(result.size != 0):
+        print(f"Grösste Differenz ist: {max(result) - min(result)}")
+
+
+def BenchmarkGetMaxReward(func, arraysize):
     performanceResults = pd.DataFrame({'average': [0]})
 
-    for i in range(9, arraysize):
+    for i in range(0, arraysize):
+        # generieren von differenzen
         rng = np.random.default_rng()
-        rints = rng.integers(-100, 100, size=i)
+        rints = rng.integers(low=-10, high=10, size=i)
         arrayGenerated = np.array(rints)
+
+        # Benchmarking mit Timeit Funktionen
         execution_time = timeit.repeat(
-            lambda: GetMaxReward(arrayGenerated), repeat=1, number=1,)
+            lambda: func(arrayGenerated), repeat=1, number=1,)
         print(execution_time)
         performanceResults = performanceResults.append(
             {'average': np.mean(execution_time)}, ignore_index=True)
 
     print(performanceResults)
+
+    # Plotten von Verlauf der Zeiten
     plt.scatter(performanceResults.index, performanceResults['average'])
+    plt.title(f"{func.__name__} mit Arraylänge {arraysize}")
+    plt.xlabel("Arraylänge")
+    plt.ylabel("Zeit in Sekunden")
     plt.show()
 
 
 # Array
 array = np.array([31, -41, 59, 26, -53, 58, 97, -93, -23])
-GetMaxReward(array)
+
+GetMaxRewardFirstTry(array)
+GetMaxRewardSecondTry(array)
+
+
+# # Benchmarks
+
 # Verdoppelung 9 -> 18
-Benchmark(18)
+BenchmarkGetMaxReward(GetMaxRewardFirstTry, 18)
 # Vergrösserung des Arrays
-Benchmark(100)
+BenchmarkGetMaxReward(GetMaxRewardFirstTry, 100)
+
+
+BenchmarkGetMaxReward(GetMaxRewardSecondTry, 18)
 # Vergrösserung des Arrays
-Benchmark(500)
+BenchmarkGetMaxReward(GetMaxRewardSecondTry, 100)
+# Vergrösserung des Arrays
+BenchmarkGetMaxReward(GetMaxRewardSecondTry, 1000)
